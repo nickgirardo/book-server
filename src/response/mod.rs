@@ -64,7 +64,7 @@ impl ResponseBuilder {
     }
 
     pub fn content(&mut self, content: String) -> &mut Self {
-        self.content = String::from(content);
+        self.content = content;
         self
     }
 
@@ -83,7 +83,7 @@ impl fmt::Display for Response {
         let _ = write!(f, "HTTP/1.1 {}\r\n", self.status.as_str());
 
         // Normal headers
-        for (name, value) in (&self.headers).into_iter() {
+        for (name, value) in self.headers.iter() {
             let _ = write!(f, "{name}: {value}\r\n");
         }
 

@@ -16,40 +16,39 @@ pub struct RouteHandler(pub Route, pub fn(RouteParams) -> Response);
 
 // TODO better error type?
 fn into_parts(route: &str) -> Result<Vec<RoutePart>, &str> {
-    if route.len() == 0 {
+    if route.is_empty() {
         return Err("Empty route");
     }
 
-    let route = if route.chars().nth(0).unwrap() == '/' {
-        &route[1..]
+    let route = if let Some(route) = route.strip_prefix('/') {
+        route
     } else {
         return Err("Route must begin with \"/\"");
     };
 
-    if route.len() == 0 {
+    if route.is_empty() {
         return Ok(Vec::new());
     };
 
-    let parts: Vec<_> = route.split("/").collect();
+    let parts: Vec<_> = route.split('/').collect();
 
     parts
         .into_iter()
         .map(|part| {
-            if part == "" {
+            if part.is_empty() {
                 // Should empty route parts be allowed?
                 Err("Empty route part")
-            } else if part.chars().nth(0).unwrap() == '*' {
+            } else if part.starts_with('*') {
                 if part.len() > 1 {
                     Err("Named wildcard")
                 } else {
                     Ok(RoutePart::Wildcard)
                 }
-            } else if part.chars().nth(0).unwrap() == ':' {
-                let tail = &part[1..];
-                if tail == "" {
+            } else if let Some(match_name) = part.strip_prefix(':') {
+                if match_name.is_empty() {
                     Err("Unnamed match")
                 } else {
-                    Ok(RoutePart::Param(String::from(tail)))
+                    Ok(RoutePart::Param(String::from(match_name)))
                 }
             } else {
                 Ok(RoutePart::Static(String::from(part)))
@@ -81,7 +80,7 @@ mod tests {
 
 impl Route {
     pub fn new(route: &str) -> Result<Self, &str> {
-        into_parts(route).map(|parts| Route(parts))
+        into_parts(route).map(Route)
     }
 
     // Matches rotues
@@ -91,7 +90,7 @@ impl Route {
         route: &str,
         handler: &'a RouteHandler,
     ) -> Option<(&RouteHandler, RouteParams)> {
-        let route = match route.chars().nth(0) {
+        let route = match route.chars().next() {
             Some('/') => &route[1..],
             _ => return None,
         };
@@ -99,8 +98,8 @@ impl Route {
         let mut params = HashMap::<String, String>::new();
 
         // Empty route case
-        if route.len() == 0 {
-            return if self.0.len() == 0 {
+        if route.is_empty() {
+            return if self.0.is_empty() {
                 // NOTE on this empty match the params hash map is empty
                 Some((handler, RouteParams::new(params)))
             } else {
@@ -108,7 +107,7 @@ impl Route {
             };
         }
 
-        let match_parts: Vec<_> = route.split("/").collect();
+        let match_parts: Vec<_> = route.split('/').collect();
 
         // For now forcing the route and the potential match to have the same number of parts
         // If we have a more powerful wildcard e.g. `**` this might no longer hold
@@ -116,7 +115,7 @@ impl Route {
             return None;
         }
 
-        for (route_part, candidate) in (&self.0).into_iter().zip(match_parts) {
+        for (route_part, candidate) in self.0.iter().zip(match_parts) {
             match route_part {
                 RoutePart::Wildcard => continue,
                 RoutePart::Param(key) => {

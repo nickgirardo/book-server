@@ -70,10 +70,10 @@ fn handle_connection(mut stream: TcpStream, server_cfg: Arc<Server>) {
     // this ignores headers and bodies
     let parsed_request = parse_request_line(&request_line.unwrap().unwrap());
 
-    let resp: Response = if parsed_request == None {
-        bad_request()
+    let resp: Response = if let Some(req) = parsed_request {
+        server(server_cfg, req)
     } else {
-        server(server_cfg, parsed_request.unwrap())
+        bad_request()
     };
 
     stream.write_all(resp.to_string().as_bytes()).unwrap();

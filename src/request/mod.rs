@@ -21,7 +21,7 @@ pub enum ReqHttpVersion {
 }
 
 pub fn parse_request_line(request_line: &str) -> Option<Request> {
-    let request_parts: Vec<_> = request_line.split(" ").collect();
+    let request_parts: Vec<_> = request_line.split(' ').collect();
 
     if let [method, uri, version] = request_parts[..] {
         let version = if version == "HTTP/1.1" {
