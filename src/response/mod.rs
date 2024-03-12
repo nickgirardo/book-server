@@ -16,7 +16,7 @@ pub enum RespStatus {
 }
 
 impl RespStatus {
-    fn as_str(&self) -> &'static str {
+    fn as_str(self) -> &'static str {
         match self {
             RespStatus::Ok => "200 OK",
             RespStatus::NoContent => "204 NO CONTENT",
@@ -54,7 +54,7 @@ impl ResponseBuilder {
         Self {
             status,
             headers: Vec::new(),
-            content: String::from(""),
+            content: String::new(),
         }
     }
 
@@ -83,7 +83,7 @@ impl fmt::Display for Response {
         let _ = write!(f, "HTTP/1.1 {}\r\n", self.status.as_str());
 
         // Normal headers
-        for (name, value) in self.headers.iter() {
+        for (name, value) in &self.headers {
             let _ = write!(f, "{name}: {value}\r\n");
         }
 
@@ -98,6 +98,6 @@ pub fn strip_response_body(resp: Response) -> Response {
     Response {
         status: resp.status,
         headers: resp.headers,
-        content: String::from(""),
+        content: String::new(),
     }
 }

@@ -12,7 +12,7 @@ enum RoutePart {
     Wildcard,
 }
 
-pub struct RouteHandler(pub Route, pub fn(RouteParams) -> Response);
+pub struct RouteHandler(pub Route, pub fn(&RouteParams) -> Response);
 
 // TODO better error type?
 fn into_parts(route: &str) -> Result<Vec<RoutePart>, &str> {
@@ -20,9 +20,7 @@ fn into_parts(route: &str) -> Result<Vec<RoutePart>, &str> {
         return Err("Empty route");
     }
 
-    let route = if let Some(route) = route.strip_prefix('/') {
-        route
-    } else {
+    let Some(route) = route.strip_prefix('/') else {
         return Err("Route must begin with \"/\"");
     };
 
@@ -79,6 +77,10 @@ mod tests {
 }
 
 impl Route {
+    /// # Errors
+    ///
+    /// Will return `Err` if the route cannot be parsed
+    /// Could potentially be done at compile time
     pub fn new(route: &str) -> Result<Self, &str> {
         into_parts(route).map(Route)
     }
@@ -135,7 +137,7 @@ impl Route {
 }
 
 impl RouteHandler {
-    pub fn new(route: Route, handler: fn(RouteParams) -> Response) -> Self {
+    pub fn new(route: Route, handler: fn(&RouteParams) -> Response) -> Self {
         RouteHandler(route, handler)
     }
 }

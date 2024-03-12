@@ -10,19 +10,17 @@ use book_server::route::RouteParams;
 use book_server::server::run_server;
 
 fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-
-    fn get_root(_params: RouteParams) -> Response {
+    fn get_root(_params: &RouteParams) -> Response {
         file_response("res/hello.html")
     }
 
     // For testing multithreading
-    fn get_sleep(_params: RouteParams) -> Response {
+    fn get_sleep(_params: &RouteParams) -> Response {
         thread::sleep(Duration::from_secs(4));
         file_response("res/hello.html")
     }
 
-    fn get_howdy(params: RouteParams) -> Response {
+    fn get_howdy(params: &RouteParams) -> Response {
         match params.get("name") {
             // TODO this should never be reached
             // there should be some typesafe way to access uri matched properties
@@ -33,11 +31,13 @@ fn main() {
         }
     }
 
+    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+
     let server = Arc::new(mk_server!(
         "/" => get_root,
         "/sleep" => get_sleep,
         "/howdy/:name" => get_howdy,
     ));
 
-    run_server(listener, server);
+    run_server(&listener, &server);
 }
